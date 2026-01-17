@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LabLabel: Protocolo de Segurança</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-mono-document {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
+
+        @keyframes wave {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-2px) rotate(1deg); }
+        }
+        .wave-animation { animation: wave 3s ease-in-out infinite; }
+        
+        .hidden { display: none !important; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
+  }
+}
+</script>
+</head>
+<body class="bg-gray-100 min-h-screen w-full flex flex-col text-gray-800 md:h-screen md:overflow-hidden relative">
+
+    <!-- ================= VIEWS ================= -->
+
+    <!-- 1. START SCREEN -->
+    <div id="view-start" class="fixed inset-0 z-50 bg-[#003366] text-white flex flex-col items-center justify-center p-8 text-center">
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+        <div class="relative z-10 flex flex-col items-center animate-fade-in">
+            <i data-lucide="flask-conical" class="w-24 h-24 mb-6 text-[#FF8C00] animate-bounce"></i>
+            <h1 class="text-4xl font-bold mb-8 tracking-tight">LabLabel</h1>
+            <div class="max-w-xs space-y-4 mb-12 text-gray-300 text-sm">
+                <p>Você é o novo Técnico Responsável. Sua tarefa é analisar as Fichas de Segurança e rotular os frascos corretamente.</p>
+                <p>Erros podem causar acidentes graves.</p>
+            </div>
+            <button onclick="startGame()" class="bg-[#FF8C00] text-white text-lg font-bold py-4 px-12 rounded shadow-[0_4px_0_rgb(180,90,0)] active:shadow-none active:translate-y-1 transition-all uppercase tracking-wider hover:bg-[#ff991f] cursor-pointer">
+                Iniciar Turno
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. GAME HEADER -->
+    <div id="game-header" class="hidden h-12 bg-[#003366] flex items-center justify-between px-4 text-white shadow-md z-30 shrink-0 relative w-full">
+        <div class="font-bold tracking-wider text-sm flex items-center gap-2">
+            <i data-lucide="flask-conical" class="w-4 h-4 text-[#FF8C00]"></i>
+            <span>LAB-LABEL</span>
+        </div>
+        <div class="font-mono text-xs text-gray-300">
+            ITEM <span id="level-indicator">1/8</span>
+        </div>
+    </div>
+
+    <!-- 3. MAIN GAME AREA -->
+    <div id="view-game" class="hidden flex-1 flex flex-col md:flex-row relative md:overflow-hidden w-full">
+        
+        <!-- Left/Top: Product Display -->
+        <!-- Fixed height on mobile (45vh) to ensure bottle visibility, flexible on desktop -->
+        <div class="h-[45vh] md:h-auto md:flex-1 relative z-0 md:bg-[#f0f4f8] overflow-hidden shrink-0 flex items-center justify-center bg-gray-100 p-6">
+            <!-- Background Pattern -->
+            <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(#003366 1px, transparent 1px); background-size: 20px 20px;"></div>
+
+            <div class="flex flex-col items-center animate-fade-in md:scale-125 transition-transform duration-500 w-full">
+                <h3 class="text-[#003366] font-bold text-sm mb-4 uppercase tracking-widest md:text-xs md:opacity-50">Área de Rotulagem</h3>
+                
+                <!-- The Bottle -->
+                <div id="bottle-container" class="relative transition-all duration-500 ease-in-out scale-95 opacity-50">
+                    <!-- Cap -->
+                    <div class="w-16 h-8 bg-gray-800 mx-auto rounded-t-sm shadow-md z-20 relative"></div>
+                    <!-- Neck -->
+                    <div id="bottle-neck" class="w-12 h-8 mx-auto z-10 relative bg-transparent border-x border-gray-400/30"></div>
+                    <!-- Body -->
+                    <div id="bottle-body" class="w-40 h-56 rounded-3xl shadow-xl relative flex items-center justify-center transition-colors duration-500 border-2 border-dashed border-gray-300 bg-transparent backdrop-blur-sm">
+                        <!-- Liquid (Glass only) -->
+                        <div id="liquid-effect" class="hidden absolute bottom-2 left-2 right-2 top-10 bg-current opacity-20 rounded-b-2xl rounded-t-lg wave-animation text-amber-700"></div>
+                        
+                        <!-- Reflections -->
+                        <div id="bottle-reflection" class="hidden absolute top-4 right-4 w-2 h-32 bg-white/30 rounded-full pointer-events-none blur-[1px]"></div>
+
+                        <!-- Label -->
+                        <div class="w-32 h-40 bg-white shadow-inner flex flex-col p-2 relative rounded-sm z-30">
+                            <div class="border-b-2 border-black pb-1 mb-1">
+                                <p id="label-chem-name" class="text-[0.6rem] font-bold leading-tight break-words uppercase font-mono text-gray-900">Nome do Produto</p>
+                                <p id="label-chem-cas" class="text-[0.4rem] font-mono text-gray-500">CAS: 00-00-0</p>
+                            </div>
+                            <!-- Pictograms on Label -->
+                            <div id="label-pictograms" class="flex-1 grid grid-cols-2 gap-1 content-start">
+                                <!-- Icons injected here -->
+                            </div>
+                            <div class="mt-auto h-2 bg-red-600 w-full"></div>
+                        </div>
+                    </div>
+                    <!-- Shadow -->
+                    <div class="w-32 h-4 bg-black/20 blur-md mx-auto mt-[-10px] rounded-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right/Bottom: Controls -->
+        <!-- Flex-auto allows this section to grow, enabling full page scrolling on mobile if content is tall -->
+        <div class="flex-auto md:flex-none md:w-full md:max-w-md relative z-20 md:z-10 bg-white shadow-2xl md:shadow-none flex flex-col md:h-full border-t-4 md:border-t-0 md:border-l-4 border-[#FF8C00]">
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200 shrink-0">
+                <button onclick="switchTab('container')" id="tab-container" class="flex-1 py-4 flex flex-col items-center gap-1 transition-colors bg-[#003366] text-white">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                    <span class="text-xs font-bold uppercase tracking-wide">Recipiente</span>
+                </button>
+                <button onclick="switchTab('pictograms')" id="tab-pictograms" class="flex-1 py-4 flex flex-col items-center gap-1 transition-colors text-gray-500 hover:bg-gray-50">
+                    <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+                    <span class="text-xs font-bold uppercase tracking-wide">Rótulos GHS</span>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <!-- Removed overflow-y-auto on mobile to allow document body scrolling instead of internal div scrolling -->
+            <div class="p-4 bg-gray-50 md:flex-1 md:overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300">
+                
+                <!-- Container Panel -->
+                <div id="panel-container" class="space-y-3 animate-fade-in">
+                    <p class="text-sm text-gray-600 mb-2 font-medium">Selecione o frasco apropriado:</p>
+                    <div id="container-options-list" class="space-y-3"></div>
+                </div>
+
+                <!-- Pictogram Panel -->
+                <div id="panel-pictograms" class="hidden animate-fade-in">
+                    <p class="text-sm text-gray-600 mb-4 font-medium text-center">Marque os perigos identificados:</p>
+                    <div id="pictogram-grid" class="grid grid-cols-2 gap-3 pb-4"></div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-4 bg-white border-t border-gray-200 flex gap-3 shrink-0 sticky bottom-0 md:static z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-none">
+                <button onclick="openDoc()" class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-md font-bold text-sm uppercase flex items-center justify-center gap-2 hover:bg-gray-300 transition-colors">
+                    <i data-lucide="file-search" class="w-5 h-5"></i>
+                    <span>Ler Ficha</span>
+                </button>
+                <button onclick="submitLevel()" class="flex-[2] bg-[#FF8C00] text-white py-3 rounded-md font-bold text-sm uppercase shadow-md flex items-center justify-center gap-2 hover:bg-orange-600 active:bg-orange-700 transition-colors">
+                    <span>Armazenar</span>
+                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. DOCUMENT MODAL -->
+    <div id="modal-doc" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="w-full max-w-lg bg-[#fcfaf2] text-gray-900 rounded-lg shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform transition-all animate-slide-up relative" style="background-image: linear-gradient(#e8e6dc 1px, transparent 1px); background-size: 100% 24px;">
+            <div class="bg-[#e0dcc5] p-3 border-b border-gray-400 flex justify-between items-center shadow-sm">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-gray-700"></i>
+                    <span class="font-bold text-sm tracking-wide uppercase text-gray-800">Ficha de Dados de Segurança</span>
+                </div>
+                <button onclick="closeDoc()" class="p-1 hover:bg-red-100 rounded-full transition-colors"><i data-lucide="x" class="w-6 h-6 text-gray-600"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto font-mono-document text-sm leading-relaxed space-y-6">
+                <div class="border-b border-gray-300 pb-4">
+                    <div class="flex justify-between items-baseline mb-2">
+                        <h2 id="doc-name" class="text-xl font-bold uppercase">Nome</h2>
+                        <span id="doc-cas" class="text-xs text-gray-500">REF: 000</span>
+                    </div>
+                    <p id="doc-physical" class="text-gray-700 italic">Estado fisico</p>
+                </div>
+                <div class="bg-red-50/50 p-3 border-l-4 border-red-500">
+                    <div class="flex items-center gap-2 mb-2 text-red-800 font-bold uppercase text-xs">
+                        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                        <span>Identificação de Perigos</span>
+                    </div>
+                    <p id="doc-desc" class="mb-2">Desc</p>
+                    <ul id="doc-risks" class="list-disc pl-4 text-xs space-y-1 text-gray-800"></ul>
+                </div>
+                <div class="bg-blue-50/50 p-3 border-l-4 border-blue-600">
+                    <div class="flex items-center gap-2 mb-2 text-blue-800 font-bold uppercase text-xs">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                        <span>Manuseio e Armazenamento</span>
+                    </div>
+                    <p id="doc-handling" class="text-gray-800">Manuseio</p>
+                </div>
+                <div class="text-center pt-4">
+                    <p class="text-[10px] text-gray-400 uppercase">Documento Oficial - Laboratório Central</p>
+                    <div class="w-full h-px bg-gray-300 my-2"></div>
+                    <p class="font-serif italic text-gray-500">Aprovado pelo Supervisor</p>
+                </div>
+            </div>
+            <div class="p-4 bg-[#e0dcc5] border-t border-gray-400">
+                <button onclick="closeDoc()" class="w-full bg-[#003366] text-white py-3 rounded font-bold uppercase tracking-wider shadow-lg hover:bg-[#002244] transition-transform">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. FEEDBACK MODAL -->
+    <div id="modal-feedback" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
+        <div id="feedback-card" class="w-full max-w-sm p-6 rounded-lg shadow-2xl text-center border-t-8 flex flex-col max-h-[90vh] bg-white border-gray-500">
+            <div class="overflow-y-auto p-2 flex-1">
+                <div id="feedback-icon-container" class="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4 mt-4 bg-gray-100">
+                    <!-- Icon -->
+                </div>
+                <h3 id="feedback-title" class="text-xl font-bold mb-1 text-gray-800">Título</h3>
+                <p class="text-xs font-mono text-gray-400 mb-2">Pontuação: <span id="feedback-points">0</span></p>
+                <p id="feedback-msg" class="text-gray-600 mb-6 text-sm font-medium px-4">Mensagem</p>
+                <div class="bg-slate-50 border border-slate-200 rounded mx-4 mb-6 p-4 text-left shadow-inner">
+                    <div class="flex items-center gap-2 mb-2 text-[#003366]">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                        <span class="font-bold text-xs uppercase tracking-wider">Nota Técnica (NR-26/GHS)</span>
+                    </div>
+                    <p id="feedback-explanation" class="text-xs text-gray-700 leading-relaxed mb-4">Explicação</p>
+                    <a id="feedback-link" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold text-[#FF8C00] hover:text-orange-700 hover:underline transition-colors">
+                        <span>Ver Ficha Oficial (FISPQ/GHS)</span>
+                        <i data-lucide="external-link" class="w-3 h-3"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-100">
+                <button onclick="nextLevel()" class="w-full bg-[#003366] text-white py-3 rounded font-bold uppercase tracking-wide flex items-center justify-center gap-2 hover:bg-[#002244] transition-colors shadow-md">
+                    <span>Próximo Item</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. FINAL REPORT -->
+    <div id="view-report" class="hidden min-h-screen w-full bg-slate-100 flex flex-col items-center justify-center p-6">
+        <div class="bg-white w-full max-w-md p-8 rounded-lg shadow-2xl border-t-8 border-[#003366] text-center max-h-[90vh] flex flex-col">
+            <div class="shrink-0">
+                <i data-lucide="award" class="w-16 h-16 mx-auto text-[#FF8C00] mb-4"></i>
+                <h2 class="text-2xl font-bold text-[#003366] mb-1">Relatório Final</h2>
+                <p class="text-gray-500 text-sm mb-6">Turno Encerrado</p>
+                <div class="mb-6">
+                    <span id="final-score" class="text-6xl font-bold text-gray-800">0/0</span>
+                    <div id="final-grade" class="text-xl font-bold mt-2">Classe: F</div>
+                </div>
+            </div>
+            <div id="report-history" class="space-y-2 mb-6 text-left overflow-y-auto flex-1 pr-2 scrollbar-thin scrollbar-thumb-gray-300">
+                <!-- History Items -->
+            </div>
+            <div class="shrink-0 pt-2 border-t border-gray-100">
+                <button onclick="location.reload()" class="w-full bg-[#003366] text-white py-3 rounded font-bold flex items-center justify-center gap-2 hover:bg-[#002244]">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    Novo Turno
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+        // --- CONSTANTS ---
+        const GHS_PICTOGRAMS = [
+            { id: 'ghs01', label: 'Explosivo', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/GHS-pictogram-explos.svg' },
+            { id: 'ghs02', label: 'Inflamável', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/GHS-pictogram-flamme.svg/240px-GHS-pictogram-flamme.svg.png' },
+            { id: 'ghs03', label: 'Oxidante', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e5/GHS-pictogram-rondflam.svg' },
+            { id: 'ghs05', label: 'Corrosivo', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a1/GHS-pictogram-acid.svg' },
+            { id: 'ghs06', label: 'Toxicidade Aguda', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/58/GHS-pictogram-skull.svg' },
+            { id: 'ghs07', label: 'Nocivo', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/GHS-pictogram-exclam.svg' },
+            { id: 'ghs08', label: 'Perigo à Saúde', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/21/GHS-pictogram-silhouette.svg' },
+            { id: 'ghs09', label: 'Perigoso p/ Meio Ambiente', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/GHS-pictogram-pollu.svg' },
+        ];
+
+        const CONTAINER_OPTIONS = [
+            { id: 'vidro_ambar', name: 'Vidro Âmbar', type: 'glass', color: 'bg-amber-700/80', desc: 'Proteção contra luz (Fotossensíveis)' },
+            { id: 'vidro_transparente', name: 'Vidro Transp.', type: 'glass', color: 'bg-blue-100/40', desc: 'Líquidos inertes gerais' },
+            { id: 'plastico_branco', name: 'Plástico PEAD', type: 'plastic', color: 'bg-slate-100', desc: 'Sólidos / Bases fortes' },
+        ];
+
+        const LEVELS = [
+            {
+                id: 'lvl1', name: 'Etanol Absoluto', casNumber: '64-17-5', physicalState: 'Líquido incolor, volátil.',
+                description: 'Álcool etílico de alta pureza. Altamente inflamável. Deve ser mantido longe de fontes de calor e ignição. Provoca irritação ocular grave.',
+                handling: 'Manter recipiente hermeticamente fechado em local ventilado.',
+                risks: ['H225: Líquido e vapor altamente inflamáveis.', 'H319: Provoca irritação ocular grave.', 'H350: Pode provocar câncer.'],
+                correctContainer: 'vidro_ambar', 
+                correctPictograms: ['ghs02', 'ghs07', 'ghs08'],
+                explanation: 'O Etanol é altamente inflamável (GHS02) e irritante (GHS07). Classificações recentes também indicam potencial carcinogênico (GHS08). Armazenar em vidro âmbar longe de fontes de ignição.',
+                referenceUrl: 'https://produtosquimicos.cetesb.sp.gov.br/ficha/produto/19'
+            },
+            {
+                id: 'lvl2', name: 'Ácido Sulfúrico 98%', casNumber: '7664-93-9', physicalState: 'Líquido viscoso, incolor a levemente amarelado.',
+                description: 'Ácido mineral forte. Provoca queimaduras severas na pele e danos oculares graves. Reage violentamente com água.',
+                handling: 'Use luvas de proteção, roupa de proteção, proteção ocular e facial. Nunca adicione água ao ácido.',
+                risks: ['H303: Pode ser nocivo se ingerido.', 'H330: Fatal se inalado.', 'H314: Provoca queimaduras severas à pele e dano aos olhos.'],
+                correctContainer: ['vidro_ambar', 'vidro_transparente'],
+                correctPictograms: ['ghs05', 'ghs06', 'ghs08'],
+                explanation: 'Extremamente Corrosivo (GHS05). Possui Toxicidade Aguda se inalado (GHS06) e riscos sistêmicos à saúde (GHS08). O armazenamento deve ser feito em vidro (âmbar ou transparente são aceitos, embora âmbar seja preferível por boas práticas) com contenção.',
+                referenceUrl: 'https://produtosquimicos.cetesb.sp.gov.br/ficha/produto/18'
+            },
+            {
+                id: 'lvl3', name: 'Dicromato de Potássio', casNumber: '7778-50-9', physicalState: 'Sólido cristalino laranja-avermelhado.',
+                description: 'Oxidante forte. Tóxico se ingerido. Pode causar câncer genético. Muito tóxico para organismos aquáticos.',
+                handling: 'Evite a liberação para o meio ambiente. Use EPI completo.',
+                risks: ['H272: Pode agravar incêndios; oxidante.', 'H301: Tóxico se ingerido.', 'H350: Pode provocar câncer.', 'H410: Muito tóxico para organismos aquáticos.'],
+                correctContainer: ['plastico_branco', 'vidro_ambar', 'vidro_transparente'],
+                correctPictograms: ['ghs03', 'ghs06', 'ghs08', 'ghs09'],
+                explanation: 'Produto extremamente perigoso: Oxidante (GHS03), Tóxico (GHS06), Carcinogênico (GHS08) e Poluente (GHS09). É quimicamente estável em vidro ou plástico inerte adequado.',
+                referenceUrl: 'https://sistemas.ffclrp.usp.br/cipa/fispq/Dicromato%20de%20potassio.pdf'
+            },
+            {
+                id: 'lvl4', name: 'Hidróxido de Sódio (Lentilhas)', casNumber: '1310-73-2', physicalState: 'Sólido branco (lentilhas ou pérolas).',
+                description: 'Base forte. Corrosivo para metais. Causa danos severos à saúde se inalado ou ingerido.',
+                handling: 'Manter em recipiente seco. Absorve água e CO2 do ar (higroscópico).',
+                risks: ['H290: Pode ser corrosivo para os metais.', 'H314: Provoca queimaduras severas.'],
+                correctContainer: 'plastico_branco',
+                correctPictograms: ['ghs05', 'ghs08'],
+                explanation: 'Corrosivo (GHS05) e apresenta Perigo à Saúde (GHS08) devido aos danos severos nos tecidos. Deve ser armazenado em plástico (PEAD) pois ataca o vidro.',
+                referenceUrl: 'https://produtosquimicos.cetesb.sp.gov.br/ficha/produto/38'
+            },
+            {
+                id: 'lvl5', name: 'Clorofórmio', casNumber: '67-66-3', physicalState: 'Líquido incolor, volátil.',
+                description: 'Nocivo se ingerido. Suspeito de causar câncer. Provoca irritação na pele. Tóxico para o feto.',
+                handling: 'Armazenar ao abrigo da luz. Sensível à luz.',
+                risks: ['H302: Nocivo se ingerido.', 'H315: Provoca irritação cutânea.', 'H351: Suspeito de provocar câncer.', 'H411: Tóxico para os organismos aquáticos, com efeitos prolongados.'],
+                correctContainer: 'vidro_ambar',
+                correctPictograms: ['ghs05', 'ghs07', 'ghs08', 'ghs09'],
+                explanation: 'Requer rotulagem completa: Corrosivo/Irritante Severo (GHS05), Nocivo (GHS07), Perigo à Saúde/Carcinogênico (GHS08) e Perigoso ao Meio Ambiente (GHS09). Fotossensível, exige vidro âmbar.',
+                referenceUrl: 'https://produtosquimicos.cetesb.sp.gov.br/ficha/produto/541'
+            },
+            {
+                id: 'lvl6', name: 'Metanosulfonato de Etila (EMS)', casNumber: '62-50-0', physicalState: 'Líquido incolor.',
+                description: 'Agente alquilante potente. Pode causar defeitos genéticos. Pode causar câncer. Nocivo se ingerido.',
+                handling: 'Manusear sob exaustão (capela). Evitar qualquer contato.',
+                risks: ['H302: Nocivo se ingerido.', 'H340: Pode provocar anomalias genéticas.', 'H350: Pode provocar câncer.'],
+                correctContainer: 'vidro_ambar',
+                correctPictograms: ['ghs06', 'ghs08'],
+                explanation: 'EMS possui alta Toxicidade Aguda (GHS06) e é um mutagênico/carcinogênico comprovado (GHS08). Armazenamento seguro em vidro âmbar.',
+                referenceUrl: 'https://biosseguranca.ensp.fiocruz.br/documentos_fichaquimica/Metanossulfonato_de_Metila.pdf'
+            },
+            {
+                id: 'lvl7', name: 'Formaldeído 37%', casNumber: '50-00-0', physicalState: 'Líquido incolor, odor pungente.',
+                description: 'Tóxico se ingerido ou inalado. Pode provocar câncer. Sensibilizante. Irritante para pele e olhos.',
+                handling: 'Usar em capela. Evitar inalação. Estabilizado com metanol.',
+                risks: ['H301+H311+H331: Tóxico por ingestão, pele ou inalação.', 'H317: Pode provocar uma reação alérgica cutânea.', 'H350: Pode provocar câncer.'],
+                correctContainer: ['vidro_ambar', 'plastico_branco'],
+                correctPictograms: ['ghs06', 'ghs07', 'ghs08'],
+                explanation: 'O Formaldeído é Tóxico (GHS06), Nocivo/Sensibilizante (GHS07) e Carcinogênico (GHS08). Pode ser armazenado em vidro âmbar (proteção luz) ou recipientes plásticos adequados.',
+                referenceUrl: 'https://produtosquimicos.cetesb.sp.gov.br/ficha/produto/951'
+            },
+            {
+                id: 'lvl8', name: 'Peróxido de Hidrogênio 30%', casNumber: '7722-84-1', physicalState: 'Líquido incolor.',
+                description: 'Oxidante forte. Nocivo se ingerido. Provoca queimaduras graves.',
+                handling: 'Manter afastado do calor. Armazenar em recipientes com respiro.',
+                risks: ['H302: Nocivo se ingerido.', 'H311: Tóxico em contato com a pele.', 'H331: Tóxico se inalado.', 'H400: Muito tóxico para os organismos aquáticos.'],
+                correctContainer: ['plastico_branco', 'vidro_ambar'],
+                correctPictograms: ['ghs03', 'ghs05', 'ghs06', 'ghs07', 'ghs08', 'ghs09'],
+                explanation: 'Classificação complexa: Oxidante (GHS03), Corrosivo (GHS05), Toxicidade Aguda (GHS06), Nocivo (GHS07), Perigo à Saúde (GHS08) e Ambiente (GHS09). Plástico é preferível, mas vidro âmbar especial com respiro também é aceito.',
+                referenceUrl: 'https://produtosquimicos.cetesb.sp.gov.br/ficha/produto/195'
+            }
+        ];
+
+        // --- STATE ---
+        let currentLevelIndex = 0;
+        let score = 0;
+        let historyLog = [];
+        let currentContainer = null;
+        let currentPictograms = [];
+
+        // --- DOM ELEMENTS ---
+        const viewStart = document.getElementById('view-start');
+        const viewGame = document.getElementById('view-game');
+        const viewReport = document.getElementById('view-report');
+        const gameHeader = document.getElementById('game-header');
+        const levelIndicator = document.getElementById('level-indicator');
+        
+        // Product Display
+        const bottleContainer = document.getElementById('bottle-container');
+        const bottleBody = document.getElementById('bottle-body');
+        const bottleNeck = document.getElementById('bottle-neck');
+        const liquidEffect = document.getElementById('liquid-effect');
+        const bottleReflection = document.getElementById('bottle-reflection');
+        const labelChemName = document.getElementById('label-chem-name');
+        const labelChemCas = document.getElementById('label-chem-cas');
+        const labelPictograms = document.getElementById('label-pictograms');
+
+        // Controls
+        const tabContainer = document.getElementById('tab-container');
+        const tabPictograms = document.getElementById('tab-pictograms');
+        const panelContainer = document.getElementById('panel-container');
+        const panelPictograms = document.getElementById('panel-pictograms');
+        const containerOptionsList = document.getElementById('container-options-list');
+        const pictogramGrid = document.getElementById('pictogram-grid');
+
+        // Modals
+        const modalDoc = document.getElementById('modal-doc');
+        const modalFeedback = document.getElementById('modal-feedback');
+
+        // --- INITIALIZATION ---
+        function init() {
+            lucide.createIcons();
+            renderContainerOptions();
+            renderPictogramOptions();
+        }
+
+        // --- GAME LOGIC ---
+
+        function startGame() {
+            currentLevelIndex = 0;
+            score = 0;
+            historyLog = [];
+            resetLevelState();
+            
+            viewStart.classList.add('hidden');
+            viewGame.classList.remove('hidden');
+            gameHeader.classList.remove('hidden');
+            
+            loadLevel();
+        }
+
+        function resetLevelState() {
+            currentContainer = null;
+            currentPictograms = [];
+            switchTab('container');
+        }
+
+        function loadLevel() {
+            const data = LEVELS[currentLevelIndex];
+            levelIndicator.textContent = `${currentLevelIndex + 1}/${LEVELS.length}`;
+            
+            // Update Label
+            labelChemName.textContent = data.name;
+            labelChemCas.textContent = `CAS: ${data.casNumber}`;
+            
+            // Update Document
+            document.getElementById('doc-name').textContent = data.name;
+            document.getElementById('doc-cas').textContent = `REF: ${data.casNumber}`;
+            document.getElementById('doc-physical').textContent = data.physicalState;
+            document.getElementById('doc-desc').textContent = data.description;
+            document.getElementById('doc-handling').textContent = data.handling;
+            
+            const risksList = document.getElementById('doc-risks');
+            risksList.innerHTML = '';
+            data.risks.forEach(risk => {
+                const li = document.createElement('li');
+                li.textContent = risk;
+                risksList.appendChild(li);
+            });
+
+            renderProductDisplay();
+            renderSelectionStates();
+        }
+
+        // --- UI RENDERING ---
+
+        function renderProductDisplay() {
+            // Container Styling
+            const containerDef = CONTAINER_OPTIONS.find(c => c.id === currentContainer);
+            const isSolid = currentContainer === 'plastico_branco';
+            
+            // Reset Classes
+            bottleBody.className = `w-40 h-56 rounded-3xl shadow-xl relative flex items-center justify-center transition-colors duration-500`;
+            
+            if (!containerDef) {
+                bottleBody.classList.add('border-2', 'border-dashed', 'border-gray-300', 'bg-transparent', 'backdrop-blur-sm');
+                bottleContainer.classList.remove('scale-100', 'opacity-100');
+                bottleContainer.classList.add('scale-95', 'opacity-50');
+                liquidEffect.classList.add('hidden');
+                bottleReflection.classList.add('hidden');
+                bottleNeck.className = "w-12 h-8 mx-auto z-10 relative bg-transparent border-x border-gray-400/30";
+            } else {
+                bottleContainer.classList.remove('scale-95', 'opacity-50');
+                bottleContainer.classList.add('scale-100', 'opacity-100');
+                
+                // Add color class
+                const colors = containerDef.color.split(' ');
+                colors.forEach(c => bottleBody.classList.add(c));
+
+                if (isSolid) {
+                    bottleNeck.className = "w-12 h-8 mx-auto z-10 relative bg-slate-100 border-x border-slate-300";
+                    liquidEffect.classList.add('hidden');
+                    bottleReflection.classList.add('hidden');
+                } else {
+                    bottleNeck.className = "w-12 h-8 mx-auto z-10 relative bg-transparent border-x border-gray-400/30";
+                    bottleBody.classList.add('backdrop-blur-sm', 'border', 'border-white/20', 'ring-1', 'ring-black/5');
+                    liquidEffect.classList.remove('hidden');
+                    bottleReflection.classList.remove('hidden');
+                }
+            }
+
+            // Label Pictograms
+            labelPictograms.innerHTML = '';
+            if (currentPictograms.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = "col-span-2 h-full flex items-center justify-center text-[0.5rem] text-gray-300 italic text-center";
+                empty.textContent = "Sem GHS";
+                labelPictograms.appendChild(empty);
+            } else {
+                currentPictograms.forEach(id => {
+                    const def = GHS_PICTOGRAMS.find(p => p.id === id);
+                    if (def) {
+                        const img = document.createElement('img');
+                        img.src = def.imageUrl;
+                        img.className = "w-8 h-8 object-contain";
+                        labelPictograms.appendChild(img);
+                    }
+                });
+            }
+        }
+
+        function renderContainerOptions() {
+            containerOptionsList.innerHTML = '';
+            CONTAINER_OPTIONS.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.id = `btn-container-${opt.id}`;
+                btn.onclick = () => selectContainer(opt.id);
+                btn.className = "w-full p-4 rounded-lg border-2 flex items-center gap-4 transition-all border-gray-200 bg-white hover:border-gray-300 text-left";
+                
+                btn.innerHTML = `
+                    <div class="w-10 h-10 rounded-md shadow-inner ${opt.color}"></div>
+                    <div class="flex-1">
+                        <div class="font-bold text-[#003366]">${opt.name}</div>
+                        <div class="text-xs text-gray-500">${opt.desc}</div>
+                    </div>
+                    <i data-lucide="check-circle-2" class="ml-auto text-green-600 w-6 h-6 hidden check-icon"></i>
+                `;
+                containerOptionsList.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        function renderPictogramOptions() {
+            pictogramGrid.innerHTML = '';
+            GHS_PICTOGRAMS.forEach(pic => {
+                const div = document.createElement('div');
+                div.className = "flex flex-col items-center p-2 rounded-lg bg-white border border-gray-100 shadow-sm";
+                
+                const btn = document.createElement('div');
+                btn.id = `btn-pictogram-${pic.id}`;
+                btn.onclick = () => togglePictogram(pic.id);
+                btn.className = "relative flex items-center justify-center transition-all duration-200 cursor-pointer w-16 h-16 hover:scale-105 active:scale-95";
+                
+                btn.innerHTML = `<img src="${pic.imageUrl}" alt="${pic.label}" class="w-full h-full object-contain drop-shadow-sm">`;
+                
+                div.appendChild(btn);
+                pictogramGrid.appendChild(div);
+            });
+        }
+
+        function renderSelectionStates() {
+            // Containers
+            CONTAINER_OPTIONS.forEach(opt => {
+                const btn = document.getElementById(`btn-container-${opt.id}`);
+                const check = btn.querySelector('.check-icon');
+                if (currentContainer === opt.id) {
+                    btn.classList.remove('border-gray-200', 'bg-white', 'hover:border-gray-300');
+                    btn.classList.add('border-[#003366]', 'bg-blue-50', 'ring-1', 'ring-[#003366]');
+                    check.classList.remove('hidden');
+                } else {
+                    btn.classList.add('border-gray-200', 'bg-white', 'hover:border-gray-300');
+                    btn.classList.remove('border-[#003366]', 'bg-blue-50', 'ring-1', 'ring-[#003366]');
+                    check.classList.add('hidden');
+                }
+            });
+
+            // Pictograms
+            GHS_PICTOGRAMS.forEach(pic => {
+                const btn = document.getElementById(`btn-pictogram-${pic.id}`);
+                if (currentPictograms.includes(pic.id)) {
+                    btn.classList.remove('hover:scale-105', 'active:scale-95');
+                    btn.classList.add('ring-4', 'ring-[#FF8C00]', 'ring-offset-2', 'scale-105', 'z-10', 'rounded-md', 'bg-white', 'shadow-lg');
+                } else {
+                    btn.classList.add('hover:scale-105', 'active:scale-95');
+                    btn.classList.remove('ring-4', 'ring-[#FF8C00]', 'ring-offset-2', 'scale-105', 'z-10', 'rounded-md', 'bg-white', 'shadow-lg');
+                }
+            });
+        }
+
+        // --- INTERACTION HANDLERS ---
+
+        function switchTab(tab) {
+            if (tab === 'container') {
+                panelContainer.classList.remove('hidden');
+                panelPictograms.classList.add('hidden');
+                
+                tabContainer.classList.add('bg-[#003366]', 'text-white');
+                tabContainer.classList.remove('text-gray-500', 'hover:bg-gray-50');
+                
+                tabPictograms.classList.remove('bg-[#003366]', 'text-white');
+                tabPictograms.classList.add('text-gray-500', 'hover:bg-gray-50');
+            } else {
+                panelContainer.classList.add('hidden');
+                panelPictograms.classList.remove('hidden');
+
+                tabPictograms.classList.add('bg-[#003366]', 'text-white');
+                tabPictograms.classList.remove('text-gray-500', 'hover:bg-gray-50');
+
+                tabContainer.classList.remove('bg-[#003366]', 'text-white');
+                tabContainer.classList.add('text-gray-500', 'hover:bg-gray-50');
+            }
+        }
+
+        function selectContainer(id) {
+            currentContainer = id;
+            renderProductDisplay();
+            renderSelectionStates();
+        }
+
+        function togglePictogram(id) {
+            if (currentPictograms.includes(id)) {
+                currentPictograms = currentPictograms.filter(p => p !== id);
+            } else {
+                currentPictograms.push(id);
+            }
+            renderProductDisplay();
+            renderSelectionStates();
+        }
+
+        function openDoc() { modalDoc.classList.remove('hidden'); }
+        function closeDoc() { modalDoc.classList.add('hidden'); }
+
+        // --- SUBMISSION & SCORING ---
+
+        function submitLevel() {
+            const data = LEVELS[currentLevelIndex];
+            
+            // Validate Container
+            const validContainers = Array.isArray(data.correctContainer) ? data.correctContainer : [data.correctContainer];
+            const isContainerCorrect = currentContainer !== null && validContainers.includes(currentContainer);
+
+            // Validate Pictograms
+            const selectedSorted = [...currentPictograms].sort();
+            const correctSorted = [...data.correctPictograms].sort();
+            const isPictogramsCorrect = JSON.stringify(selectedSorted) === JSON.stringify(correctSorted);
+
+            // Calculate Logic
+            let points = 0;
+            let status = 'rejected';
+            let msg = '';
+            let mistakes = [];
+
+            if (isContainerCorrect && isPictogramsCorrect) {
+                points = 1.0;
+                status = 'approved';
+                msg = "Protocolo seguido perfeitamente.";
+            } else if (isContainerCorrect || isPictogramsCorrect) {
+                points = 0.5;
+                status = 'partial';
+                if (!isContainerCorrect) mistakes.push('Recipiente Incorreto');
+                if (!isPictogramsCorrect) mistakes.push('Rótulos GHS Incorretos');
+                msg = `Atenção: Protocolo parcialmente correto. Erro: ${mistakes.join(', ')}.`;
+            } else {
+                points = 0;
+                status = 'rejected';
+                mistakes.push('Recipiente Incorreto');
+                mistakes.push('Rótulos GHS Incorretos');
+                msg = "Falha crítica no protocolo. Nenhum item correto.";
+            }
+
+            score += points;
+            historyLog.push({ levelId: data.id, status, points, mistakes });
+
+            showFeedback(status, points, msg, data);
+        }
+
+        function showFeedback(status, points, msg, data) {
+            const card = document.getElementById('feedback-card');
+            const iconContainer = document.getElementById('feedback-icon-container');
+            const title = document.getElementById('feedback-title');
+            
+            // Reset styles
+            card.className = "w-full max-w-sm p-6 rounded-lg shadow-2xl text-center border-t-8 flex flex-col max-h-[90vh] bg-white";
+            iconContainer.className = "w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4 mt-4";
+            iconContainer.innerHTML = '';
+            title.className = "text-xl font-bold mb-1";
+
+            if (status === 'approved') {
+                card.classList.add('border-green-500');
+                iconContainer.classList.add('bg-green-100', 'text-green-600');
+                iconContainer.innerHTML = '<i data-lucide="check-circle-2" class="w-8 h-8"></i>';
+                title.classList.add('text-green-800');
+                title.textContent = "Armazenado";
+            } else if (status === 'partial') {
+                card.classList.add('border-amber-500');
+                iconContainer.classList.add('bg-amber-100', 'text-amber-600');
+                iconContainer.innerHTML = '<i data-lucide="alert-triangle" class="w-8 h-8"></i>';
+                title.classList.add('text-amber-800');
+                title.textContent = "Incompleto";
+            } else {
+                card.classList.add('border-red-500');
+                iconContainer.classList.add('bg-red-100', 'text-red-600');
+                iconContainer.innerHTML = '<i data-lucide="alert-octagon" class="w-8 h-8"></i>';
+                title.classList.add('text-red-800');
+                title.textContent = "Rejeitado";
+            }
+
+            document.getElementById('feedback-points').textContent = points;
+            document.getElementById('feedback-msg').textContent = msg;
+            document.getElementById('feedback-explanation').textContent = data.explanation;
+            document.getElementById('feedback-link').href = data.referenceUrl;
+            
+            lucide.createIcons();
+            modalFeedback.classList.remove('hidden');
+        }
+
+        function nextLevel() {
+            modalFeedback.classList.add('hidden');
+            if (currentLevelIndex < LEVELS.length - 1) {
+                currentLevelIndex++;
+                resetLevelState();
+                loadLevel();
+            } else {
+                showReport();
+            }
+        }
+
+        function showReport() {
+            viewGame.classList.add('hidden');
+            gameHeader.classList.add('hidden');
+            viewReport.classList.remove('hidden');
+
+            document.getElementById('final-score').textContent = `${score}/${LEVELS.length}`;
+            
+            // Grading Scale
+            let grade = 'F';
+            if (score === 8) grade = 'A+';
+            else if (score >= 6.5) grade = 'A';
+            else if (score >= 5.5) grade = 'B+';
+            else if (score >= 4) grade = 'B';
+            else if (score >= 3) grade = 'C';
+            else if (score > 0) grade = 'E';
+            else grade = 'F';
+
+            const gradeEl = document.getElementById('final-grade');
+            gradeEl.textContent = `Classe: ${grade}`;
+            gradeEl.className = "text-xl font-bold mt-2";
+            if (['A+', 'A', 'B+', 'B'].includes(grade)) gradeEl.classList.add('text-green-600');
+            else if (['C'].includes(grade)) gradeEl.classList.add('text-amber-500');
+            else gradeEl.classList.add('text-red-500');
+
+            // History
+            const list = document.getElementById('report-history');
+            list.innerHTML = '';
+            
+            historyLog.forEach((h, i) => {
+                const data = LEVELS.find(l => l.id === h.levelId);
+                
+                let statusColor = 'text-red-500';
+                let statusText = 'REJEITADO';
+                if (h.status === 'approved') { statusColor = 'text-green-600'; statusText = 'APROVADO'; }
+                else if (h.status === 'partial') { statusColor = 'text-amber-500'; statusText = 'ATENÇÃO'; }
+
+                // Determine Correct Container String
+                let correctContainerName = 'Desconhecido';
+                const validContainers = Array.isArray(data.correctContainer) ? data.correctContainer : [data.correctContainer];
+                if (validContainers.length >= CONTAINER_OPTIONS.length) {
+                    correctContainerName = 'Qualquer Recipiente';
+                } else {
+                    correctContainerName = validContainers.map(c => CONTAINER_OPTIONS.find(opt => opt.id === c)?.name).join(' ou ');
+                }
+
+                const item = document.createElement('div');
+                item.className = "border-b border-gray-100 pb-2";
+                item.innerHTML = `
+                    <div class="flex items-center justify-between text-xs py-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-gray-600">Item ${i + 1}</span>
+                            <button onclick="toggleDetails(${i})" class="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full p-1 transition-colors" title="Ver Gabarito">
+                                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-mono text-gray-400">(${h.points})</span>
+                            <span class="${statusColor} font-bold">${statusText}</span>
+                        </div>
+                    </div>
+                    <div id="details-${i}" class="hidden mt-2 bg-slate-50 p-3 rounded border border-slate-200 text-xs">
+                         <p class="text-[#003366] font-bold mb-2 uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="check-circle-2" class="w-3 h-3"></i> Gabarito:
+                         </p>
+                         <div class="mb-2">
+                            <span class="font-semibold text-gray-600">Recipiente:</span>
+                            <span class="ml-1 text-gray-800">${correctContainerName}</span>
+                         </div>
+                         <div>
+                            <span class="font-semibold text-gray-600 block mb-1">Rótulos GHS:</span>
+                            <div class="flex gap-2" id="details-ghs-${i}"></div>
+                         </div>
+                    </div>
+                `;
+                
+                list.appendChild(item);
+                
+                // Add GHS Icons to details
+                const ghsContainer = item.querySelector(`#details-ghs-${i}`);
+                data.correctPictograms.forEach(picId => {
+                    const def = GHS_PICTOGRAMS.find(p => p.id === picId);
+                    if(def) {
+                        const img = document.createElement('img');
+                        img.src = def.imageUrl;
+                        img.className = "w-6 h-6 bg-white p-1 rounded border border-gray-200 shadow-sm";
+                        ghsContainer.appendChild(img);
+                    }
+                });
+            });
+            lucide.createIcons();
+        }
+
+        function toggleDetails(index) {
+            const el = document.getElementById(`details-${index}`);
+            el.classList.toggle('hidden');
+        }
+
+        // Run Init
+        init();
+
+    </script>
+</body>
+</html>

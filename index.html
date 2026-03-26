@@ -758,18 +758,23 @@
             // Validate Container
             const validContainers = Array.isArray(data.correctContainer) ? data.correctContainer : [data.correctContainer];
             const isContainerCorrect = currentContainer !== null && validContainers.includes(currentContainer);
-
-            // Validate Pictograms
-            const selectedSorted = [...currentPictograms].sort();
-            const correctSorted = [...data.correctPictograms].sort();
-            const isPictogramsCorrect = JSON.stringify(selectedSorted) === JSON.stringify(correctSorted);
-
+        
+            // Validate Pictograms - FIX: Compare sets instead of sorted strings
+            const selectedSet = new Set(currentPictograms);
+            const correctSet = new Set(data.correctPictograms);
+            const isPictogramsCorrect = selectedSet.size === correctSet.size && 
+                                        [...selectedSet].every(item => correctSet.has(item));
+        
+            // DEBUG: Log the comparison
+            console.log('Container:', currentContainer, 'Valid:', validContainers, 'Correct:', isContainerCorrect);
+            console.log('Pictograms Selected:', currentPictograms, 'Correct:', data.correctPictograms, 'Match:', isPictogramsCorrect);
+        
             // Calculate Logic
             let points = 0;
             let status = 'rejected';
             let msg = '';
             let mistakes = [];
-
+        
             if (isContainerCorrect && isPictogramsCorrect) {
                 points = 1.0;
                 status = 'approved';
@@ -787,12 +792,12 @@
                 mistakes.push('Rótulos GHS Incorretos');
                 msg = "Falha crítica no protocolo. Nenhum item correto.";
             }
-
+        
             score += points;
             historyLog.push({ levelId: data.id, status, points, mistakes });
-
+        
             showFeedback(status, points, msg, data);
-        }
+}
 
         function showFeedback(status, points, msg, data) {
             const card = document.getElementById('feedback-card');

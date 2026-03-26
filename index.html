@@ -55,36 +55,38 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-gray-100 min-h-screen w-full flex flex-col text-gray-800 md:h-screen md:overflow-hidden relative">
 
     <!-- ================= VIEWS ================= -->
 
     <!-- 1. START SCREEN -->
-    <div id="view-start" class="fixed inset-0 z-50 bg-[#003366] text-white flex flex-col items-center justify-center p-8 text-center overflow-y-auto">
+    <div id="view-start" class="fixed inset-0 z-50 bg-[#003366] text-white flex flex-col items-center justify-start sm:justify-center p-6 sm:p-8 text-center overflow-y-auto">
         <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none fixed"></div>
-        <div class="relative z-10 flex flex-col items-center animate-fade-in max-w-2xl w-full my-auto">
-            <i data-lucide="flask-conical" class="w-20 h-20 mb-4 text-[#FF8C00] animate-bounce"></i>
-            <h1 class="text-4xl font-bold mb-6 tracking-tight">LabLabel</h1>
+        <div class="relative z-10 flex flex-col items-center animate-fade-in max-w-2xl w-full py-4 sm:py-0 my-auto">
+            <i data-lucide="flask-conical" class="w-16 h-16 sm:w-20 sm:h-20 mb-4 text-[#FF8C00] animate-bounce shrink-0"></i>
+            <h1 class="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6 tracking-tight shrink-0">LabLabel</h1>
             
             <!-- Instructions Container -->
-            <div class="w-full space-y-4 mb-8 text-left bg-white/10 p-6 rounded-lg backdrop-blur-sm border border-white/20 text-gray-100 text-sm shadow-xl">
-                <p class="font-semibold text-lg text-white mb-2">Você é o novo Técnico Responsável.</p>
+            <div class="w-full space-y-3 sm:space-y-4 mb-6 sm:mb-8 text-left bg-white/10 p-5 sm:p-6 rounded-lg backdrop-blur-sm border border-white/20 text-gray-100 text-xs sm:text-sm shadow-xl">
+                <p class="font-semibold text-base sm:text-lg text-white mb-1 sm:mb-2">Você é o novo Técnico Responsável.</p>
                 <p>Sua tarefa é analisar as Fichas de Segurança e rotular os frascos corretamente.</p>
                 <p>Rotular e escolher o recipiente correto para cada substância apresentada seguindo a Ficha de Dados (FISPQ/GHS). Cada nível é uma substância diferente (8 níveis no total).</p>
                 
-                <div class="bg-black/20 p-4 rounded mt-4">
-                    <p class="font-bold text-[#FF8C00] mb-2 uppercase text-xs tracking-wider">O jogador deve:</p>
-                    <ul class="list-disc pl-5 space-y-2">
+                <div class="bg-black/20 p-3 sm:p-4 rounded mt-3 sm:mt-4">
+                    <p class="font-bold text-[#FF8C00] mb-2 uppercase text-[10px] sm:text-xs tracking-wider">O jogador deve:</p>
+                    <ul class="list-disc pl-5 space-y-1 sm:space-y-2">
                         <li>Selecionar o recipiente adequado (um dos botões em "Recipiente").</li>
                         <li>Selecionar os pictogramas GHS corretos (na aba "Rótulos GHS").</li>
                         <li>Clicar em <strong>Armazenar</strong> para submeter a resposta. É possível abrir a "Ficha" (botão "Ler Ficha") para ver descrição, riscos e manuseio.</li>
                     </ul>
                 </div>
-                <p class="text-xs text-center text-gray-400 mt-2">Erros podem causar acidentes graves.</p>
+
+                <p class="text-[10px] sm:text-xs text-center text-gray-400 mt-2">Erros podem causar acidentes graves.</p>
             </div>
 
-            <button onclick="startGame()" class="bg-[#FF8C00] text-white text-lg font-bold py-4 px-12 rounded shadow-[0_4px_0_rgb(180,90,0)] active:shadow-none active:translate-y-1 transition-all uppercase tracking-wider hover:bg-[#ff991f] cursor-pointer w-full sm:w-auto">
+            <button onclick="startGame()" class="bg-[#FF8C00] text-white text-base sm:text-lg font-bold py-3 sm:py-4 px-10 sm:px-12 rounded shadow-[0_4px_0_rgb(180,90,0)] active:shadow-none active:translate-y-1 transition-all uppercase tracking-wider hover:bg-[#ff991f] cursor-pointer w-full sm:w-auto shrink-0 mb-4">
                 Iniciar Turno
             </button>
         </div>
@@ -267,6 +269,9 @@
                         <li>Clicar em <strong>Armazenar</strong> para submeter a resposta. É possível abrir a "Ficha" (botão "Ler Ficha") para ver descrição, riscos e manuseio.</li>
                     </ul>
                 </div>
+
+                <!-- Substances Guide -->
+                <div id="help-substances-guide"></div>
             </div>
             <div class="p-4 border-t border-gray-200 bg-gray-50 text-right">
                 <button onclick="closeHelp()" class="bg-[#003366] text-white px-6 py-2 rounded font-bold uppercase text-xs hover:bg-[#002244] transition-colors">
@@ -336,7 +341,7 @@
         // --- CONSTANTS ---
         const GHS_PICTOGRAMS = [
             { id: 'ghs01', label: 'Explosivo', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/GHS-pictogram-explos.svg' },
-            { id: 'ghs02', label: 'Inflamável', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/GHS-pictogram-flamme.svg/240px-GHS-pictogram-flamme.svg.png' },
+            { id: 'ghs02', label: 'Inflamável', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/6d/GHS-pictogram-flamme.svg' },
             { id: 'ghs03', label: 'Oxidante', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e5/GHS-pictogram-rondflam.svg' },
             { id: 'ghs05', label: 'Corrosivo', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a1/GHS-pictogram-acid.svg' },
             { id: 'ghs06', label: 'Toxicidade Aguda', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/58/GHS-pictogram-skull.svg' },
@@ -355,6 +360,7 @@
             {
                 id: 'lvl1', name: 'Etanol Absoluto', casNumber: '64-17-5', physicalState: 'Líquido incolor, volátil.',
                 description: 'Álcool etílico de alta pureza. Altamente inflamável. Deve ser mantido longe de fontes de calor e ignição. Provoca irritação ocular grave.',
+                labImportance: 'Solvente universal e agente de esterilização; essencial para limpeza de vidrarias e como reagente em sínteses orgânicas.',
                 handling: 'Manter recipiente hermeticamente fechado em local ventilado.',
                 risks: ['H225: Líquido e vapor altamente inflamáveis.', 'H319: Provoca irritação ocular grave.', 'H350: Pode provocar câncer.'],
                 correctContainer: 'vidro_ambar', 
@@ -365,6 +371,7 @@
             {
                 id: 'lvl2', name: 'Ácido Sulfúrico 98%', casNumber: '7664-93-9', physicalState: 'Líquido viscoso, incolor a levemente amarelado.',
                 description: 'Ácido mineral forte. Provoca queimaduras severas na pele e danos oculares graves. Reage violentamente com água.',
+                labImportance: 'Ácido mineral forte e desidratante; fundamental na fabricação de fertilizantes, refino de petróleo e como catalisador químico.',
                 handling: 'Use luvas de proteção, roupa de proteção, proteção ocular e facial. Nunca adicione água ao ácido.',
                 risks: ['H303: Pode ser nocivo se ingerido.', 'H330: Fatal se inalado.', 'H314: Provoca queimaduras severas à pele e dano aos olhos.'],
                 correctContainer: ['vidro_ambar', 'vidro_transparente'],
@@ -375,6 +382,7 @@
             {
                 id: 'lvl3', name: 'Dicromato de Potássio', casNumber: '7778-50-9', physicalState: 'Sólido cristalino laranja-avermelhado.',
                 description: 'Oxidante forte. Tóxico se ingerido. Pode causar câncer genético. Muito tóxico para organismos aquáticos.',
+                labImportance: 'Agente oxidante forte; utilizado em análises volumétricas e na limpeza de vidrarias laboratoriais (mistura sulfocrômica).',
                 handling: 'Evite a liberação para o meio ambiente. Use EPI completo.',
                 risks: ['H272: Pode agravar incêndios; oxidante.', 'H301: Tóxico se ingerido.', 'H350: Pode provocar câncer.', 'H410: Muito tóxico para organismos aquáticos.'],
                 correctContainer: ['plastico_branco', 'vidro_ambar', 'vidro_transparente'],
@@ -385,6 +393,7 @@
             {
                 id: 'lvl4', name: 'Hidróxido de Sódio (Lentilhas)', casNumber: '1310-73-2', physicalState: 'Sólido branco (lentilhas ou pérolas).',
                 description: 'Base forte. Corrosivo para metais. Causa danos severos à saúde se inalado ou ingerido.',
+                labImportance: 'Base forte e cáustica; crucial para ajuste de pH, titulações ácido-base e na fabricação de sabões e detergentes laboratoriais.',
                 handling: 'Manter em recipiente seco. Absorve água e CO2 do ar (higroscópico).',
                 risks: ['H290: Pode ser corrosivo para os metais.', 'H314: Provoca queimaduras severas.'],
                 correctContainer: 'plastico_branco',
@@ -395,6 +404,7 @@
             {
                 id: 'lvl5', name: 'Clorofórmio', casNumber: '67-66-3', physicalState: 'Líquido incolor, volátil.',
                 description: 'Nocivo se ingerido. Suspeito de causar câncer. Provoca irritação na pele. Tóxico para o feto.',
+                labImportance: 'Solvente orgânico e agente de extração; importante em laboratórios de bioquímica para separação de fases e extração de DNA/RNA.',
                 handling: 'Armazenar ao abrigo da luz. Sensível à luz.',
                 risks: ['H302: Nocivo se ingerido.', 'H315: Provoca irritação cutânea.', 'H351: Suspeito de provocar câncer.', 'H411: Tóxico para os organismos aquáticos, com efeitos prolongados.'],
                 correctContainer: 'vidro_ambar',
@@ -405,6 +415,7 @@
             {
                 id: 'lvl6', name: 'Metanosulfonato de Etila (EMS)', casNumber: '62-50-0', physicalState: 'Líquido incolor.',
                 description: 'Agente alquilante potente. Pode causar defeitos genéticos. Pode causar câncer. Nocivo se ingerido.',
+                labImportance: 'Agente mutagênico alquilante; vital em pesquisas de genética e biologia molecular para indução de mutações em organismos modelo.',
                 handling: 'Manusear sob exaustão (capela). Evitar qualquer contato.',
                 risks: ['H302: Nocivo se ingerido.', 'H340: Pode provocar anomalias genéticas.', 'H350: Pode provocar câncer.'],
                 correctContainer: 'vidro_ambar',
@@ -414,7 +425,8 @@
             },
             {
                 id: 'lvl7', name: 'Formaldeído 37%', casNumber: '50-00-0', physicalState: 'Líquido incolor, odor pungente.',
-                description: 'Tóxico se ingerido ou inalado. Pode provocar câncer. Sensibilizante. Irritante para pele e olhos.',
+                description: 'Tóxico se ingerido or inalado. Pode provocar câncer. Sensibilizante. Irritante para pele e olhos.',
+                labImportance: 'Agente fixador e conservante; indispensável em laboratórios de histologia e anatomia para preservação de tecidos biológicos e amostras.',
                 handling: 'Usar em capela. Evitar inalação. Estabilizado com metanol.',
                 risks: ['H301+H311+H331: Tóxico por ingestão, pele ou inalação.', 'H317: Pode provocar uma reação alérgica cutânea.', 'H350: Pode provocar câncer.'],
                 correctContainer: ['vidro_ambar', 'plastico_branco'],
@@ -425,6 +437,7 @@
             {
                 id: 'lvl8', name: 'Peróxido de Hidrogênio 30%', casNumber: '7722-84-1', physicalState: 'Líquido incolor.',
                 description: 'Oxidante forte. Nocivo se ingerido. Provoca queimaduras graves.',
+                labImportance: 'Agente oxidante e desinfetante; usado em processos de oxidação avançada, branqueamento e como reagente em diversas reações químicas.',
                 handling: 'Manter afastado do calor. Armazenar em recipientes com respiro.',
                 risks: ['H302: Nocivo se ingerido.', 'H311: Tóxico em contato com a pele.', 'H331: Tóxico se inalado.', 'H400: Muito tóxico para os organismos aquáticos.'],
                 correctContainer: ['plastico_branco', 'vidro_ambar'],
@@ -476,6 +489,7 @@
             lucide.createIcons();
             renderContainerOptions();
             renderPictogramOptions();
+            renderSubstancesGuide();
         }
 
         // --- GAME LOGIC ---
@@ -618,8 +632,47 @@
                 btn.innerHTML = `<img src="${pic.imageUrl}" alt="${pic.label}" class="w-full h-full object-contain drop-shadow-sm">`;
                 
                 div.appendChild(btn);
+
+                // Legend
+                const legend = document.createElement('span');
+                legend.className = "text-[9px] text-gray-500 mt-2 text-center font-bold leading-none uppercase tracking-tighter h-6 flex items-center";
+                legend.textContent = pic.label;
+                div.appendChild(legend);
+
                 pictogramGrid.appendChild(div);
             });
+        }
+
+        function renderSubstancesGuide() {
+            const helpGuide = document.getElementById('help-substances-guide');
+
+            const generateHtml = () => `
+                <div class="mt-6 border-t border-gray-200 pt-4">
+                    <p class="font-bold text-[#003366] mb-3 uppercase text-xs tracking-wider flex items-center gap-2">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        Guia de Referência Técnica:
+                    </p>
+                    <div class="grid gap-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin">
+                        ${LEVELS.map(lvl => `
+                            <div class="text-[11px] bg-gray-50 border-gray-100 p-3 rounded border shadow-sm">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-bold text-gray-800 text-xs">${lvl.name}</span>
+                                    <a href="${lvl.referenceUrl}" target="_blank" class="text-[#FF8C00] hover:underline flex items-center gap-1 font-bold">
+                                        FISPQ <i data-lucide="external-link" class="w-3 h-3"></i>
+                                    </a>
+                                </div>
+                                <p class="text-gray-700 leading-relaxed italic mb-1">"${lvl.labImportance}"</p>
+                                <p class="text-gray-500 text-[10px] leading-tight">${lvl.description.split('.')[0]}.</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            if (helpGuide) {
+                helpGuide.innerHTML = generateHtml();
+                lucide.createIcons();
+            }
         }
 
         function renderSelectionStates() {
@@ -893,5 +946,6 @@
         init();
 
     </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
